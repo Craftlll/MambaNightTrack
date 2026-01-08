@@ -170,3 +170,5 @@ pytracking/evaluation/local.py
 pytracking/run_local.py
 
 *.code-workspace
+
+output*/
