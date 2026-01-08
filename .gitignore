@@ -172,3 +172,4 @@ pytracking/run_local.py
 *.code-workspace
 
 output*/
+pretrained_models/
