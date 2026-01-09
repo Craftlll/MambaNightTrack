@@ -53,12 +53,21 @@ class MambaNUT(nn.Module):
         
         # Apply enhancer if enabled
         if hasattr(self, 'use_lyt') and self.use_lyt:
-            # We assume template and search are standard normalized tensors.
-            # LYT typically expects [0,1] or similar. 
-            # If input is normalized, might need to denormalize if LYT expects raw.
-            # Assuming LYT and tracker standardizations are compatible or part of end-to-end learning.
-            template = self.enhancer(template)
-            search = self.enhancer(search)
+            # Denormalize (ImageNet stats) -> [0, 1] range
+            # mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225]
+            mean = torch.tensor([0.485, 0.456, 0.406], device=template.device).view(1, 3, 1, 1)
+            std = torch.tensor([0.229, 0.224, 0.225], device=template.device).view(1, 3, 1, 1)
+            
+            template_raw = template * std + mean
+            search_raw = search * std + mean
+            
+            # Enhance
+            template_enhanced = self.enhancer(template_raw)
+            search_enhanced = self.enhancer(search_raw)
+            
+            # Renormalize -> ImageNet stats for Backbone
+            template = (template_enhanced - mean) / std
+            search = (search_enhanced - mean) / std
 
         x = self.backbone.forward_features(z=template, x=search,
                                            inference_params=None)
