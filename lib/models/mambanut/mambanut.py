@@ -12,16 +12,14 @@ from lib.utils.box_ops import box_xyxy_to_cxcywh
 
 from lib.models.mambanut.models_mamba_R import mambar_small_patch16_224
 
-import numpy as np
-
-import importlib
 from torch.nn.functional import l1_loss
 
+from lib.models.lyt.model import LYT_Mamba
 
 class MambaNUT(nn.Module):
     """ This is the base class for MambaNUT """
 
-    def __init__(self, transformer, box_head, aux_loss=False, head_type="CORNER"):
+    def __init__(self, transformer, box_head, aux_loss=False, head_type="CORNER", use_lyt=False):
         """ Initializes the model.
         Parameters:
             transformer: torch module of the transformer architecture.
@@ -39,15 +37,28 @@ class MambaNUT(nn.Module):
             self.feat_len_s = int(box_head.feat_sz ** 2)
             self.feat_len_t = int(self.feat_sz_t ** 2)
 
-
         if self.aux_loss:
             self.box_head = _get_clones(self.box_head, 6)
         self.l1_loss = l1_loss
+        
+        self.use_lyt = use_lyt
+        if self.use_lyt:
+            print("Initializing MambaNUT with LYT_Mamba enhancer...")
+            self.enhancer = LYT_Mamba(filters=32)
 
     def forward(self, template: torch.Tensor,
                 search: torch.Tensor,
                 training_dataset='',
                 ):
+        
+        # Apply enhancer if enabled
+        if hasattr(self, 'use_lyt') and self.use_lyt:
+            # We assume template and search are standard normalized tensors.
+            # LYT typically expects [0,1] or similar. 
+            # If input is normalized, might need to denormalize if LYT expects raw.
+            # Assuming LYT and tracker standardizations are compatible or part of end-to-end learning.
+            template = self.enhancer(template)
+            search = self.enhancer(search)
 
         x = self.backbone.forward_features(z=template, x=search,
                                            inference_params=None)
@@ -63,6 +74,11 @@ class MambaNUT(nn.Module):
         # out.update(aux_dict)
         out['backbone_feat'] = x
         out['training_datasets'] = training_dataset
+        
+        # Optionally return enhanced images for visualization/loss
+        if hasattr(self, 'use_lyt') and self.use_lyt:
+            out['enhanced_template'] = template
+            out['enhanced_search'] = search
 
         return out
 
@@ -127,11 +143,15 @@ def build_mambanut(cfg, training=True):
 
     box_head = build_box_head(cfg, hidden_dim)
 
+    # Check for LYT enhancer config
+    use_lyt = cfg.MODEL.USE_LYT if hasattr(cfg.MODEL, 'USE_LYT') else False
+
     model = MambaNUT(
         backbone,
         box_head,
         aux_loss=False,
         head_type=cfg.MODEL.HEAD.TYPE,
+        use_lyt=use_lyt
     )
 
     if 'MambaNUT' in cfg.MODEL.PRETRAIN_FILE and training:

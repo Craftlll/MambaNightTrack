@@ -72,6 +72,7 @@ class LTRTrainer(BaseTrainer):
         self._init_timing()
 
         #  =====================Sampling Scheduler==========================
+        #  =====================Sampling Scheduler==========================
         night_dataset_indices = [
             i for i, d in enumerate(loader.dataset.datasets)
             if d.name.lower() in (['exdark', 'bdd100k_night', 'shift_night'])
@@ -83,7 +84,11 @@ class LTRTrainer(BaseTrainer):
         loader.dataset.p_datasets = [x / p_total for x in loader.dataset.p_datasets]
         # print('loader.dataset.p_datasets:', loader.dataset.p_datasets)
         #  =====================Sampling Scheduler==========================
-        for i, data in enumerate(loader, 1):
+
+        from tqdm import tqdm
+        pbar = tqdm(enumerate(loader, 1), total=len(loader), desc=f"[{loader.name}: {self.epoch}]")
+        
+        for i, data in pbar:
             self.data_read_done_time = time.time()
             # get inputs
             if self.move_data_to_gpu:
@@ -121,7 +126,31 @@ class LTRTrainer(BaseTrainer):
             self._update_stats(stats, batch_size, loader)
 
             # print statistics
-            self._print_stats(i, loader, batch_size)
+            # self._print_stats(i, loader, batch_size) # Disable raw print
+            
+            # Update tqdm progress bar
+            self.num_frames += batch_size
+            current_time = time.time()
+            # Calculate average FPS
+            average_fps = self.num_frames / (current_time - self.start_time)
+            self.prev_time = current_time
+            
+            if i % self.settings.print_interval == 0 or i == loader.__len__():
+                postfix = OrderedDict()
+                postfix['FPS'] = f"{average_fps:.1f}"
+                postfix['Loss/total'] = f"{self.stats[loader.name]['Loss/total'].avg:.4f}"
+                if 'IoU' in self.stats[loader.name]:
+                    postfix['IoU'] = f"{self.stats[loader.name]['IoU'].avg:.4f}"
+                pbar.set_postfix(postfix)
+                
+                # Still log to file
+                log_str = f"[{loader.name}: {self.epoch}, {i} / {len(loader)}] FPS: {average_fps:.1f}, "
+                for name, val in self.stats[loader.name].items():
+                    if (self.settings.print_stats is None or name in self.settings.print_stats):
+                        if hasattr(val, 'avg'):
+                            log_str += '%s: %.5f  ,  ' % (name, val.avg)
+                with open(self.settings.log_file, 'a') as f:
+                    f.write(log_str + '\n')
 
             # update wandb status
             if self.wandb_writer is not None and i % self.settings.print_interval == 0:
@@ -131,9 +160,6 @@ class LTRTrainer(BaseTrainer):
         # calculate ETA after every epoch
         epoch_time = self.prev_time - self.start_time
         print("Epoch Time: " + str(datetime.timedelta(seconds=epoch_time)))
-        print("Avg Data Time: %.5f" % (self.avg_date_time / self.num_frames * batch_size))
-        print("Avg GPU Trans Time: %.5f" % (self.avg_gpu_trans_time / self.num_frames * batch_size))
-        print("Avg Forward Time: %.5f" % (self.avg_forward_time / self.num_frames * batch_size))
 
     def train_epoch(self):
         """Do one epoch for each loader."""
