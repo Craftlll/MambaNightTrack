@@ -61,14 +61,14 @@ class MambaNUTActor(BaseActor):
         return out_dict
 
     def compute_adw_loss(self, ious, training_datasets):
-        trainging_samples = {'exdark':0.74e4, 'bdd100k_night':2.81e4, 'shift_night':1.53e4, 'got10k':106e4, 'lasot':224e4, 'trackingnet':1410e4, 'coco':11.8e4}
+        training_samples = {'exdark':0.74e4, 'bdd100k_night':2.81e4, 'shift_night':1.53e4, 'got10k':106e4, 'lasot':224e4, 'trackingnet':1410e4, 'coco':11.8e4}
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        N_max = torch.tensor(max(trainging_samples.values())).to(device)
+        N_max = torch.tensor(max(training_samples.values())).to(device)
 
         adw_loss = []
         for idx, dataset in enumerate(training_datasets):
             iou = ious[idx] if ious[idx] != 0 else ious[idx] + 0.01
-            samples_number = torch.tensor(trainging_samples.get(dataset)).to(device)
+            samples_number = torch.tensor(training_samples.get(dataset.lower())).to(device)
             loss = torch.pow(torch.log(N_max) / torch.log(samples_number) + 0.5, 1 - iou) * torch.log(iou) - iou * (1 - iou)
             adw_loss.append(loss)
 

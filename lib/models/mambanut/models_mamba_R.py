@@ -442,9 +442,18 @@ def mambar_small_patch16_224(pretrained=False, **kwargs):
         fused_add_norm=True, num_cls_tokens=0, cls_reduce=0, **kwargs)
     model.default_cfg = _cfg()
     if pretrained:
-        checkpoint = torch.load('/root/autodl-tmp/MambaNightTrack/pretrained_models/mambar_small_patch16_224.pth', map_location="cpu")
-        missing_keys, unexpected_keys = model.load_state_dict(checkpoint["model"], strict=False)
-        print('Load pretrained model from: ' + '/root/autodl-tmp/MambaNightTrack/pretrained_models/mambar_small_patch16_224.pth')
+        pretrained_path = kwargs.get('pretrained_path', None)
+        if pretrained_path is None:
+            # Fallback to default relative path
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            pretrained_path = os.path.join(current_dir, '../../../pretrained_models/mambar_small_patch16_224.pth')
+        
+        if os.path.exists(pretrained_path):
+            checkpoint = torch.load(pretrained_path, map_location="cpu")
+            missing_keys, unexpected_keys = model.load_state_dict(checkpoint["model"], strict=False)
+            print('Load pretrained model from: ' + pretrained_path)
+        else:
+            print(f"Warning: Pretrained model not found at {pretrained_path}")
     return model
 
 @register_model

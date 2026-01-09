@@ -137,7 +137,7 @@ def build_mambanut(cfg, training=True):
         pretrained = ''
 
     if cfg.MODEL.BACKBONE.TYPE == 'mambar_small_patch16_224':
-        backbone = mambar_small_patch16_224(num_classes=0, pretrained=training)
+        backbone = mambar_small_patch16_224(num_classes=0, pretrained=training, pretrained_path=pretrained)
         hidden_dim = 384
         patch_start_index = 1
     else:
