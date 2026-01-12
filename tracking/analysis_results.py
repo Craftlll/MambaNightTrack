@@ -11,7 +11,7 @@ dataset_name = 'nat2021'
 # dataset_name = 'uavdark135'
 
 """mambanut"""
-trackers.extend(trackerlist(name='mambanut', parameter_name='mambar_small_patch16_224', dataset_name=dataset_name,
+trackers.extend(trackerlist(name='mambanut', parameter_name='mambar_small_patch16_224_lyt', dataset_name=dataset_name,
                             run_ids=None, display_name='MambaNUTLYT'))
 
 
