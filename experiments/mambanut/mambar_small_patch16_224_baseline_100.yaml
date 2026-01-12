@@ -26,9 +26,6 @@ DATA:
     - ExDark
     - BDD100K_NIGHT
     - SHIFT_NIGHT
-    # - LASOT
-    # - COCO17
-    # - TRACKINGNET
     DATASETS_RATIO:
     - 1
     - 1
@@ -45,7 +42,7 @@ MODEL:
   PRETRAIN_FILE: "mambar_small_patch16_224.pth"
   EXTRA_MERGER: False
   RETURN_INTER: False
-  USE_LYT: True
+  USE_LYT: False
   BACKBONE:
     TYPE: mambar_small_patch16_224
     STRIDE: 16

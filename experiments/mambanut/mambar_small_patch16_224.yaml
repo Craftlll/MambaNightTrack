@@ -48,6 +48,7 @@ MODEL:
   PRETRAIN_FILE: "mae_pretrain_vit_base.pth"
   EXTRA_MERGER: False
   RETURN_INTER: False
+  USE_LYT: False
   BACKBONE:
     TYPE: mambar_small_patch16_224
     STRIDE: 16

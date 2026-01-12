@@ -44,10 +44,11 @@ class Tracker:
         self.display_name = display_name
 
         env = env_settings()
+        # 结果目录包含数据集名称，方便区分不同数据集的测试结果
         if self.run_id is None:
-            self.results_dir = '{}/{}/{}'.format(env.results_path, self.name, self.parameter_name)
+            self.results_dir = '{}/{}/{}_{}'.format(env.results_path, self.name, self.parameter_name, self.dataset_name)
         else:
-            self.results_dir = '{}/{}/{}_{:03d}'.format(env.results_path, self.name, self.parameter_name, self.run_id)
+            self.results_dir = '{}/{}/{}_{}_{:03d}'.format(env.results_path, self.name, self.parameter_name, self.dataset_name, self.run_id)
         if result_only:
             self.results_dir = '{}/{}'.format(env.results_path, self.name)
 

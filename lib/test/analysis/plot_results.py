@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import os
 import torch
+import numpy as np
 import pickle
 import json
 from lib.test.evaluation.environment import env_settings
@@ -307,8 +308,45 @@ def generate_formatted_report(row_labels, scores, table_name=''):
         report_text = '{prev}{tracker: <{width}} |'.format(prev=report_text, tracker=d_name,
                                                            width=name_width)
         for (score_type, score_value), s_w in zip(scores.items(), score_widths):
+            # 处理不同类型的分数值
+            try:
+                if isinstance(score_value, torch.Tensor):
+                    # 如果是张量，尝试索引并转换为标量
+                    if score_value.dim() == 0:
+                        # 标量张量
+                        val = score_value.item()
+                    elif score_value.dim() == 1:
+                        # 一维张量（如 AUC, Precision, Norm Precision, OP50, OP75）
+                        if score_value.shape[0] > trk_id:
+                            val = score_value[trk_id].item()
+                        else:
+                            val = score_value[0].item() if score_value.shape[0] > 0 else 0.0
+                    else:
+                        # 多维张量，取第一个维度
+                        if score_value.shape[0] > trk_id:
+                            val = score_value[trk_id, 0].item() if score_value.shape[1] > 0 else 0.0
+                        else:
+                            val = score_value[0, 0].item() if score_value.shape[0] > 0 and score_value.shape[1] > 0 else 0.0
+                elif isinstance(score_value, np.ndarray):
+                    # numpy 数组
+                    if score_value.ndim == 0:
+                        val = float(score_value)
+                    elif score_value.ndim == 1:
+                        val = float(score_value[trk_id]) if score_value.shape[0] > trk_id else float(score_value[0]) if score_value.shape[0] > 0 else 0.0
+                    else:
+                        val = float(score_value[trk_id, 0]) if score_value.shape[0] > trk_id and score_value.shape[1] > 0 else 0.0
+                elif isinstance(score_value, list):
+                    # 列表
+                    val = float(score_value[trk_id]) if len(score_value) > trk_id else float(score_value[0]) if len(score_value) > 0 else 0.0
+                else:
+                    # 标量值（int, float）
+                    val = float(score_value)
+            except (IndexError, AttributeError, TypeError, ValueError) as e:
+                # 如果出错，使用默认值
+                val = 0.0
+            
             report_text = '{prev} {score: <{width}} |'.format(prev=report_text,
-                                                              score='{:0.2f}'.format(score_value[trk_id].item()),
+                                                              score='{:0.2f}'.format(val),
                                                               width=s_w)
         report_text = '{prev}\n'.format(prev=report_text)
 

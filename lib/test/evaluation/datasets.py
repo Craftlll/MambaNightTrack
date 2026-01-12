@@ -18,6 +18,7 @@ dataset_dict = dict(
     lasot=DatasetInfo(module=pt % "lasot", class_name="LaSOTDataset", kwargs=dict()),
     lasot_lmdb=DatasetInfo(module=pt % "lasot_lmdb", class_name="LaSOTlmdbDataset", kwargs=dict()),
     nat2021=DatasetInfo(module=pt % "nat2021", class_name="NAT2021Dataset", kwargs=dict()),
+    nat2021l=DatasetInfo(module=pt % "nat2021l", class_name="NAT2021LDataset", kwargs=dict()),
     nat2024=DatasetInfo(module=pt % "nat2024", class_name="NAT2024Dataset", kwargs=dict()),
     uavdark135=DatasetInfo(module=pt % "uavdark135", class_name="UAVDARK135Dataset", kwargs=dict()),
     vot18=DatasetInfo(module=pt % "vot", class_name="VOTDataset", kwargs=dict()),
